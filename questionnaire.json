@@ -1,0 +1,30 @@
+{
+  "_note": "DRAFT items - replace with the wording approved by your ethics/IRB board. Types: likert (1-7), choice, text.",
+  "study_title": "Outfit Recommendation Study",
+  "consent": {
+    "text": "DRAFT CONSENT - replace with the approved text.\n\nYou are invited to take part in a research study on outfit recommendation and virtual try-on. You will answer short questionnaires and upload one full-body photo of yourself. The photo is used only to create outfit visualizations for you, is stored on a university research computer, is never shown to other participants, and is deleted at the end of the study (see the information sheet). Participation is voluntary; you may withdraw at any time without giving a reason.",
+    "checkbox": "I have read the information above, I am 18 or older, and I agree to take part."
+  },
+  "pre": [
+    {"id": "pre_age", "type": "choice", "text": "Age group", "options": ["18-24", "25-34", "35-44", "45-54", "55+", "Prefer not to say"]},
+    {"id": "pre_shop_freq", "type": "choice", "text": "How often do you buy clothes online?", "options": ["Never", "A few times a year", "Monthly", "Weekly or more"]},
+    {"id": "pre_confidence", "type": "likert", "text": "I am confident choosing outfits that suit me.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "pre_visualize", "type": "likert", "text": "When shopping online, I can easily imagine how an outfit would look on me.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "pre_trust_rec", "type": "likert", "text": "I trust online outfit recommendations.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "pre_intent", "type": "likert", "text": "I would use a tool that recommends complete outfits for me.", "low": "Strongly disagree", "high": "Strongly agree"}
+  ],
+  "per_outfit": [
+    {"id": "o_match_request", "type": "likert", "text": "This outfit matches my style request.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "o_coherent", "type": "likert", "text": "The items go well together as one outfit.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "o_realistic", "type": "likert", "text": "The try-on image looks realistic.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "o_faithful", "type": "likert", "text": "The clothes in the image look like the product photos.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "o_like", "type": "likert", "text": "I would wear this outfit.", "low": "Strongly disagree", "high": "Strongly agree"}
+  ],
+  "post": [
+    {"id": "post_confidence", "type": "likert", "text": "I am confident choosing outfits that suit me.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "post_visualize", "type": "likert", "text": "With this tool, I can easily imagine how an outfit would look on me.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "post_trust_rec", "type": "likert", "text": "I trust the outfit recommendations I received.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "post_intent", "type": "likert", "text": "I would use this tool when shopping for outfits.", "low": "Strongly disagree", "high": "Strongly agree"},
+    {"id": "post_comments", "type": "text", "text": "Any comments on the recommendations or the images? (optional)", "optional": true}
+  ]
+}
