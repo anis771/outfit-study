@@ -117,11 +117,41 @@ def stage1(code):
         st.caption("Please answer all questions, choose a catalog section, describe the outfit and upload a photo.")
 
 
+def live_status(code, seen_version):
+    """Checks every 5 s; reruns the whole page when a new outfit (or the final state) is available."""
+    @st.fragment(run_every=5)
+    def _poll():
+        status = store().read_json(f"jobs/{code}/status.json") or {}
+        man = store().read_json(f"results/{code}/manifest.json") or {}
+        if man.get("version") != seen_version or status.get("state") in ("done", "failed") and not st.session_state.get(
+                "final_seen"):
+            if status.get("state") in ("done", "failed"):
+                st.session_state["final_seen"] = True
+            st.rerun(scope="app")
+        state = status.get("state", "queued")
+        ready, total = status.get("outfits_ready", 0), status.get("outfits_total", 3)
+        msg = status.get("message") or "Your request is in the queue. It will start in a moment."
+        if state == "failed":
+            st.error(msg)
+            return
+        st.info(f"⏳ {msg}")
+        st.progress(min(1.0, (ready + (0.5 if state == "rendering" else 0.1)) / max(total, 1)),
+                    text=f"{ready} of {total} outfits ready · each outfit takes about 4 minutes")
+    _poll()
+
+
 def stage2(code, manifest):
     st.subheader("Step 2 of 2: Your outfits")
-    st.write(f"Your request: *{manifest.get('request', '')}*. Please look at each outfit and rate it.")
+    status = store().read_json(f"jobs/{code}/status.json") or {}
+    finished = status.get("state") in ("done", "failed")
+    outfits = (manifest or {}).get("outfits", [])
+    req = (manifest or {}).get("request") or (store().read_json(f"submissions/{code}/pre.json") or {}).get("request", "")
+    st.write(f"Your request: *{req}*. Your outfits are created on your photo now; each one appears here as soon as "
+             "it is ready. Please rate each outfit.")
+    if not finished:
+        live_status(code, (manifest or {}).get("version"))
     ratings = {}
-    for k, o in enumerate(manifest["outfits"], 1):
+    for k, o in enumerate(outfits, 1):
         st.markdown(f"### Outfit {k}")
         st.image(store().path(f"results/{code}/{o['tryon_image']}"), use_container_width=True)
         if o.get("products"):
@@ -134,6 +164,12 @@ def stage2(code, manifest):
             st.caption(o["note"])
         ratings[o["id"]] = {it["id"]: question(it, f"o{k}_") for it in Q["per_outfit"]}
         st.divider()
+    if not finished:
+        st.caption("The final questions appear when all outfits are ready.")
+        return
+    if status.get("state") == "failed" and not outfits:
+        st.error(status.get("message", "Something went wrong."))
+        return
     st.markdown("### Final questions")
     post = {it["id"]: question(it, "post_") for it in Q["post"]}
     ready = all(answered(Q["per_outfit"], r) for r in ratings.values()) and answered(Q["post"], post)
@@ -141,7 +177,7 @@ def stage2(code, manifest):
         with st.spinner("Saving…"):
             write_json(f"responses/{code}/post.json", {"code": code, "submitted": time.strftime("%Y-%m-%d %H:%M:%S"),
                                                          "outfit_ratings": ratings, "answers": post,
-                                                         "manifest_version": manifest.get("version")})
+                                                         "manifest_version": (manifest or {}).get("version")})
         st.rerun()
     if not ready:
         st.caption("Please answer every question (the comment box is optional).")
@@ -151,8 +187,8 @@ def main():
     st.title(Q["study_title"])
     code = (st.query_params.get("p") or "").strip().upper()
     if not code:
-        st.write("Thank you for your interest. The study takes about 10 minutes now and about 10 minutes later, "
-                 "when your outfits are ready.")
+        st.write("Thank you for your interest. The study takes about 15–20 minutes: a short questionnaire, then "
+                 "outfits created on your own photo while you wait, then a few final questions.")
         if st.button("Start", type="primary", use_container_width=True):
             new = "".join(secrets.choice(ALPHABET) for _ in range(10))
             write_json(f"participants/{new}.json", {"created": time.strftime("%Y-%m-%d %H:%M:%S")})
@@ -162,20 +198,14 @@ def main():
     if not (len(code) == 10 and set(code) <= set(ALPHABET)) or not store().exists(f"participants/{code}.json"):
         st.error("This personal link is not valid. Please open the study link again and press Start.")
         return
-    with st.expander("Your personal link (bookmark it to come back later)"):
+    with st.expander("Your personal link (to come back to this page)"):
         st.code(personal_link(code), language=None)
     if store().exists(f"responses/{code}/post.json"):
         st.success("Thank you! You have completed the study.")
         return
-    manifest = store().read_json(f"results/{code}/manifest.json")
-    if manifest:
-        stage2(code, manifest)
-    elif store().exists(f"submissions/{code}/pre.json"):
-        st.success("Thank you! Your answers and photo were received. Your outfits will be ready within a few days.")
-        st.markdown("**Save this personal link** to see your outfits later:")
-        st.code(personal_link(code), language=None)
+    if store().exists(f"submissions/{code}/pre.json"):
+        stage2(code, store().read_json(f"results/{code}/manifest.json"))
     else:
         stage1(code)
-
 
 main()
